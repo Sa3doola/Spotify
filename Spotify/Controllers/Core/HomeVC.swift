@@ -11,7 +11,7 @@ class HomeVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Home"
+        title = "Browse"
         view.backgroundColor = .systemBackground
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "gear"),
                                                             style: .done,
@@ -36,7 +36,7 @@ class HomeVC: UIViewController {
                     
                 }
                 
-            case .failure(let error): break
+            case .failure(_): break
             }
         }
     }

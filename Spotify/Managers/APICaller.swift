@@ -65,7 +65,7 @@ final class APICaller {
     }
     
     public func getFeaturedPlaylist(completion: @escaping ((Result<FeaturedPlaylistResponse, Error>) -> Void)) {
-        let url = URL(string: Constants.baseAPIURL + "/browse/featured-playlists?limit=2")
+        let url = URL(string: Constants.baseAPIURL + "/browse/featured-playlists?limit=20")
         createRequest(with: url, type: .GET) { (request) in
             let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
                 guard let data = data, error == nil else {
@@ -85,9 +85,9 @@ final class APICaller {
     }
     
     public func getRecommendations(genres: Set<String>,
-                                   completion: @escaping ((Result<String, Error>) -> Void)) {
+                                   completion: @escaping ((Result<RecommendationsResponse, Error>) -> Void)) {
         let seeds = genres.joined(separator: ",")
-        let url = URL(string: Constants.baseAPIURL + "/recommendations?seed_genres=\(seeds)")
+        let url = URL(string: Constants.baseAPIURL + "/recommendations?limit=40&seed_genres=\(seeds)")
         createRequest(with: url, type: .GET) { (request) in
             let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
                 guard let data = data, error == nil else {
@@ -95,10 +95,8 @@ final class APICaller {
                     return
                 }
                 do {
-                    let result = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                    print(result)
-                        // JSONDecoder().decode(FeaturedPlaylistResponse.self, from: data)
-                    //completion(.success(result))
+                    let result = try JSONDecoder().decode(RecommendationsResponse.self, from: data)
+                    completion(.success(result))
                 }
                 catch {
                     completion(.failure(error))
