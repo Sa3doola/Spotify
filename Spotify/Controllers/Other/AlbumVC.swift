@@ -32,9 +32,9 @@ class AlbumVC: UIViewController {
         APICaller.shared.getAlbumDetails(for: album) { (result) in
             DispatchQueue.main.async {
                 switch result {
-                case .success(let model):
+                case .success(_):
                     break
-                case .failure(let error):
+                case .failure(_):
                     break
                 }
             }
