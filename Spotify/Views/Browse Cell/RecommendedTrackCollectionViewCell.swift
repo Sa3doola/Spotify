@@ -8,6 +8,9 @@
 import UIKit
 
 class RecommendedTrackCollectionViewCell: UICollectionViewCell {
+    
+    // MARK: - Properties
+    
     static let identifier = "RecommendedTrackCollectionViewCell"
     
     private let albumCoverImageView: UIImageView = {
@@ -30,6 +33,8 @@ class RecommendedTrackCollectionViewCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 15, weight: .thin)
         return label
     }()
+    
+    // MARK: - LifeCycle
     
     override init(frame: CGRect) {
         super.init(frame: frame)

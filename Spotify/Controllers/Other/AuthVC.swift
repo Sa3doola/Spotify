@@ -41,10 +41,6 @@ class AuthVC: UIViewController, WKNavigationDelegate {
         webView.frame = view.bounds
     }
     
-    // MARK:- Helper Functions
-    
-    // MARK:- Selectors
-    
     // MARK:- NavigationDelegate
     
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

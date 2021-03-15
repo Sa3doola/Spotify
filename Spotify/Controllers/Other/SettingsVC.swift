@@ -10,6 +10,7 @@ import UIKit
 class SettingsVC: UIViewController {
     
     // MARK: - Properties
+    
     private let tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
         table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -93,5 +94,4 @@ extension SettingsVC: UITableViewDelegate, UITableViewDataSource {
         let model = sections[section]
         return model.title
     }
-    
 }

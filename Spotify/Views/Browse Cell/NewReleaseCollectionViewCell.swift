@@ -9,6 +9,9 @@ import UIKit
 import SDWebImage
 
 class NewReleaseCollectionViewCell: UICollectionViewCell {
+    
+    // MARK: - Properties
+    
     static let identifier = "NewReleaseCollectionViewCell"
     
     private let albumCoverImageView: UIImageView = {
@@ -38,6 +41,8 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 18, weight: .light)
         return label
     }()
+    
+    // MARK: - LifeCycle
     
     override init(frame: CGRect) {
         super.init(frame: frame)

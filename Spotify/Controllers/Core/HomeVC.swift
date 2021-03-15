@@ -15,6 +15,13 @@ enum BrowseSectiontype {
 
 class HomeVC: UIViewController {
     
+    // MARK: - Properties
+    
+    private var newAlbums: [Album] = []
+    private var playlists: [Playlist] = []
+    private var tracks: [AudioTrack] = []
+    private var sections = [BrowseSectiontype]()
+    
     private var collectionView: UICollectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: UICollectionViewCompositionalLayout { sectionIndex, _ -> NSCollectionLayoutSection? in
@@ -29,7 +36,7 @@ class HomeVC: UIViewController {
         return spinner
     }()
     
-    private var sections = [BrowseSectiontype]()
+    // MARK: - LifeCycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,18 +58,55 @@ class HomeVC: UIViewController {
         collectionView.frame = view.bounds
     }
     
+    // MARK: - Helper Functions
+    
     private func configureCollectionView() {
         view.addSubview(collectionView)
         collectionView.register(NewReleaseCollectionViewCell.self,
-                       forCellWithReuseIdentifier: NewReleaseCollectionViewCell.identifier)
+                                forCellWithReuseIdentifier: NewReleaseCollectionViewCell.identifier)
         collectionView.register(FeaturedPlaylistCollectionViewCell.self,
-                       forCellWithReuseIdentifier: FeaturedPlaylistCollectionViewCell.identifier)
+                                forCellWithReuseIdentifier: FeaturedPlaylistCollectionViewCell.identifier)
         collectionView.register(RecommendedTrackCollectionViewCell.self,
-                       forCellWithReuseIdentifier: RecommendedTrackCollectionViewCell.identifier)
+                                forCellWithReuseIdentifier: RecommendedTrackCollectionViewCell.identifier)
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.backgroundColor = .systemBackground
     }
+    
+    private func confgiureModels(
+        newAlbums: [Album],
+        playlists: [Playlist],
+        tracks: [AudioTrack])
+    {
+        self.newAlbums = newAlbums
+        self.playlists = playlists
+        self.tracks = tracks
+        sections.append(.newReleases(viewModels: newAlbums.compactMap({
+            return NewReleasesCellVM(
+                name: $0.name,
+                artworkURL: URL(string: $0.images.first?.url ?? ""),
+                numberOfTracks: $0.total_tracks,
+                artistName: $0.artists.first?.name ?? "-"
+            )
+        })))
+        sections.append(.featuredPlaylists(viewModels: playlists.compactMap({
+            return FeaturedPlayListCellVM(
+                name: $0.name,
+                artworkURL: URL(string: $0.images.first?.url ?? ""),
+                creatorName: $0.owner.display_name
+            )
+        })))
+        sections.append(.recommendedTracks(viewModels: tracks.compactMap({
+            return RecommendedTrackCellVM(
+                name: $0.name,
+                artistName: $0.artists.first?.name ?? "-",
+                artworkURL: URL(string: $0.album?.images.first?.url ?? "")
+            )
+        })))
+        collectionView.reloadData()
+    }
+    
+    // MARK: - API Fucntions
     
     private func fetchData() {
         let group = DispatchGroup()
@@ -86,6 +130,7 @@ class HomeVC: UIViewController {
                 print(error.localizedDescription)
             }
         }
+        
         // Featured Playlists
         APICaller.shared.getFeaturedPlaylist { (result) in
             defer {
@@ -98,6 +143,7 @@ class HomeVC: UIViewController {
                 print(error.localizedDescription)
             }
         }
+        
         // Recommeded Tracks
         APICaller.shared.getRecommendationsGenres { (result) in
             switch result {
@@ -121,7 +167,6 @@ class HomeVC: UIViewController {
                         print(error.localizedDescription)
                     }
                 }
-                
             case .failure(let error):
                 print(error.localizedDescription)
             }
@@ -137,34 +182,7 @@ class HomeVC: UIViewController {
         }
     }
     
-    private func confgiureModels(
-        newAlbums: [Album],
-        playlists: [Playlist],
-        tracks: [AudioTrack]) {
-        sections.append(.newReleases(viewModels: newAlbums.compactMap({
-            return NewReleasesCellVM(
-                name: $0.name,
-                artworkURL: URL(string: $0.images.first?.url ?? ""),
-                numberOfTracks: $0.total_tracks,
-                artistName: $0.artists.first?.name ?? "-"
-            )
-        })))
-        sections.append(.featuredPlaylists(viewModels: playlists.compactMap({
-            return FeaturedPlayListCellVM(
-                name: $0.name,
-                artworkURL: URL(string: $0.images.first?.url ?? ""),
-                creatorName: $0.owner.display_name
-            )
-        })))
-        sections.append(.recommendedTracks(viewModels: tracks.compactMap({
-            return RecommendedTrackCellVM(
-                name: $0.name,
-                artistName: $0.artists.first?.name ?? "-",
-                artworkURL: URL(string: $0.album.images.first?.url ?? "")
-            )
-        })))
-        collectionView.reloadData()
-    }
+    // MARK:- Selectors
     
     @objc func didTapSettings() {
         let vc = SettingsVC()
@@ -174,6 +192,8 @@ class HomeVC: UIViewController {
     }
     
 }
+
+// MARK:- CollectionView Delegate and DataSource
 
 extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -223,6 +243,30 @@ extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource {
             return cell
         }
     }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        let section = sections[indexPath.section]
+        switch section {
+        case .featuredPlaylists:
+            let playlist = playlists[indexPath.row]
+            let vc = PlaylistVC(playList: playlist)
+            vc.title = playlist.name
+            vc.navigationItem.largeTitleDisplayMode = .never
+            navigationController?.pushViewController(vc, animated: true)
+        case .newReleases:
+            let album = newAlbums[indexPath.row]
+            let vc = AlbumVC(album: album)
+            vc.title = album.name
+            vc.navigationItem.largeTitleDisplayMode = .never
+            navigationController?.pushViewController(vc, animated: true)
+        case .recommendedTracks:
+            break
+        }
+        
+    }
+    
+    // MARK:- CollectionsLayout
     
     static func createSectionLayout(section: Int) -> NSCollectionLayoutSection {
         switch section {
@@ -335,6 +379,4 @@ extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource {
             return section
         }
     }
-    
-    
 }

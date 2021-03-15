@@ -39,8 +39,6 @@ class WelcomeVC: UIViewController {
         )
     }
     
-    // MARK:- Helper Functions
-    
     // MARK:- Selectors
     
     @objc func didTapSignIn() {
@@ -53,6 +51,8 @@ class WelcomeVC: UIViewController {
         vc.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(vc, animated: true)
     }
+    
+    // MARK:- Helper Functions
     
     private func handleSignIn(success: Bool) {
         // Log user in or yell at them for error

@@ -10,6 +10,8 @@ import UIKit
 
 class ProfileVC: UIViewController {
     
+    // MARK: - Properties
+    
     private let tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
         table.isHidden = true
@@ -18,6 +20,8 @@ class ProfileVC: UIViewController {
     }()
     
     private var models = [String]()
+    
+    // MARK: - LifeCycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,19 +38,7 @@ class ProfileVC: UIViewController {
         tableView.frame = view.bounds
     }
     
-    private func fetchProfile() {
-        APICaller.shared.getCurrentUserProfile { [weak self] (result) in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let model):
-                    self?.updateUI(with: model)
-                case .failure(let error):
-                    print(error.localizedDescription)
-                    self?.failedToGetProfile()
-                }
-            }
-        }
-    }
+    // MARK: - Helper Functions
     
     private func updateUI(with model: UserProfile) {
         tableView.isHidden = false
@@ -90,7 +82,24 @@ class ProfileVC: UIViewController {
         label.center = view.center
     }
     
+    // MARK: - API Functions
+    
+    private func fetchProfile() {
+        APICaller.shared.getCurrentUserProfile { [weak self] (result) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let model):
+                    self?.updateUI(with: model)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                    self?.failedToGetProfile()
+                }
+            }
+        }
+    }
 }
+
+// MARK: - TableView Delegate and DataSource
 
 extension ProfileVC: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -103,6 +112,5 @@ extension ProfileVC: UITableViewDelegate, UITableViewDataSource {
         cell.selectionStyle = .none
         return cell
     }
-    
     
 }

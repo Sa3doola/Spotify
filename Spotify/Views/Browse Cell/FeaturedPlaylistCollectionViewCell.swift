@@ -8,6 +8,9 @@
 import UIKit
 
 class FeaturedPlaylistCollectionViewCell: UICollectionViewCell {
+    
+    // MARK: - Properites
+    
     static let identifier = "FeaturedPlaylistCollectionViewCell"
     
     private let playlistCoverImageView: UIImageView = {
@@ -34,6 +37,8 @@ class FeaturedPlaylistCollectionViewCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 15, weight: .thin)
         return label
     }()
+    
+    // MARK: - LifeCycle
     
     override init(frame: CGRect) {
         super.init(frame: frame)
