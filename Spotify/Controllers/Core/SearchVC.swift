@@ -11,6 +11,8 @@ class SearchVC: UIViewController, UISearchResultsUpdating {
     
     // MARK: - Properties
     
+    private var categories = [Category]()
+    
     let searchController: UISearchController = {
         let vc = UISearchController(searchResultsController: SearchResultVC())
         vc.searchBar.placeholder = "Songs, Artists, Albums"
@@ -53,12 +55,24 @@ class SearchVC: UIViewController, UISearchResultsUpdating {
         view.backgroundColor = .systemBackground
         searchController.searchResultsUpdater = self
         navigationItem.searchController = searchController
-        collectionView.register(GenreCVC.self,
-                                forCellWithReuseIdentifier: GenreCVC.identifier)
+        collectionView.register(CategoryCVC.self,
+                                forCellWithReuseIdentifier: CategoryCVC.identifier)
         view.addSubview(collectionView)
         collectionView.backgroundColor = .systemBackground
         collectionView.delegate = self
         collectionView.dataSource = self
+        
+        APICaller.shared.getCategories { [weak self] (result) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let categories):
+                    self?.categories = categories
+                    self?.collectionView.reloadData()
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+            }
+        }
     }
     
     override func viewDidLayoutSubviews() {
@@ -83,15 +97,29 @@ extension SearchVC: UICollectionViewDelegate, UICollectionViewDataSource {
         return 1
     }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 20
+        return categories.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: GenreCVC.identifier, for: indexPath) as? GenreCVC else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CategoryCVC.identifier, for: indexPath) as? CategoryCVC else {
             return UICollectionViewCell()
         }
-        cell.configure(with: "Rock")
+        let category = categories[indexPath.row]
+        cell.configure(
+            with: CategoryCVCViewModel(
+                tilte: category.name,
+                artworURL: URL(string: category.icons.first?.url ?? "")
+            )
+        )
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        let category = categories[indexPath.row]
+        let vc = CategoryVC(category: category)
+        vc.navigationItem.largeTitleDisplayMode = .never
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     
