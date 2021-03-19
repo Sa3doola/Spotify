@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SearchVC: UIViewController, UISearchResultsUpdating {
+class SearchVC: UIViewController, UISearchResultsUpdating, UISearchBarDelegate {
     
     // MARK: - Properties
     
@@ -54,6 +54,7 @@ class SearchVC: UIViewController, UISearchResultsUpdating {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         searchController.searchResultsUpdater = self
+        searchController.searchBar.delegate = self
         navigationItem.searchController = searchController
         collectionView.register(CategoryCVC.self,
                                 forCellWithReuseIdentifier: CategoryCVC.identifier)
@@ -80,17 +81,50 @@ class SearchVC: UIViewController, UISearchResultsUpdating {
         collectionView.frame = view.bounds
     }
     
-    func updateSearchResults(for searchController: UISearchController) {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let resultsController = searchController.searchResultsController as? SearchResultVC,
-              let query = searchController.searchBar.text,
+              let query = searchBar.text,
               !query.trimmingCharacters(in: .whitespaces).isEmpty else {
             return
         }
-
+        
+        resultsController.delegate = self
+        
+        APICaller.shared.search(with: query) { (result) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let results):
+                    resultsController.update(with: results)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+            }
+        }
     }
-
+    
+    func updateSearchResults(for searchController: UISearchController) {
+       
+    }
 }
 
+extension SearchVC :SearchResultVCDelegate {
+    func didTapResult(_ result: SearchResult) {
+        switch result {
+        case .artist(let model):
+            break
+        case .album(model: let model):
+            let vc = AlbumVC(album: model)
+            vc.navigationItem.largeTitleDisplayMode = .never
+            navigationController?.pushViewController(vc, animated: true)
+        case .playlist(let model):
+            let vc = PlaylistVC(playList: model)
+            vc.navigationItem.largeTitleDisplayMode = .never
+            navigationController?.pushViewController(vc, animated: true)
+        case .track(let track):
+            break
+        }
+    }
+}
 
 extension SearchVC: UICollectionViewDelegate, UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
