@@ -14,6 +14,7 @@ class PlaylistVC: UIViewController {
     private let playList: Playlist
     
     private var viewModels = [RecommendedTrackCellVM]()
+    private var tracks = [AudioTrack]()
     
     private let collectionView = UICollectionView(
         frame: .zero,
@@ -83,6 +84,7 @@ class PlaylistVC: UIViewController {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let model):
+                    self?.tracks = model.tracks.items.compactMap({ $0.track })
                     self?.viewModels = model.tracks.items.compactMap({
                         RecommendedTrackCellVM(
                             name: $0.track.name,
@@ -163,14 +165,16 @@ extension PlaylistVC: UICollectionViewDelegate, UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        // Play Song
+        let track = tracks[indexPath.row]
+        PlayBackPresenter.startPlayback(from: self, track: track)
     }
 }
 
 extension PlaylistVC: PlaylistHeaderCRVDelegate {
     func PlaylistHeaderCRVDidTapPlay(_ header: PlaylistHeaderCRV) {
-        // Start playlist play in queue
+        PlayBackPresenter.startPlayback(
+            from: self,
+            tracks: tracks
+        )
     }
-    
-    
 }

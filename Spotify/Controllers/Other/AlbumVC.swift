@@ -11,8 +11,44 @@ class AlbumVC: UIViewController {
     
     // MARK: - Properties
     
+    private var tracks = [AudioTrack]()
     private let album: Album
-
+    
+    private var viewModels = [AlbumTrackCellVM]()
+    
+    private let collectionView = UICollectionView(
+        frame: .zero,
+        collectionViewLayout: UICollectionViewCompositionalLayout(sectionProvider: { _, _ -> NSCollectionLayoutSection? in
+            let item = NSCollectionLayoutItem(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1.0),
+                    heightDimension: .fractionalHeight(1.0)
+                )
+            )
+            item.contentInsets = NSDirectionalEdgeInsets(top: 1, leading: 2, bottom: 1, trailing: 2)
+            
+            let group = NSCollectionLayoutGroup.vertical(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1),
+                    heightDimension: .absolute(60)
+                ),
+                subitem: item,
+                count: 1
+            )
+            
+            let section = NSCollectionLayoutSection(group: group)
+            section.boundarySupplementaryItems = [
+                NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1),
+                                                       heightDimension: .fractionalWidth(1)),
+                    elementKind: UICollectionView.elementKindSectionHeader,
+                    alignment: .top
+                )
+            ]
+            return section
+        })
+    )
+    
     init(album: Album) {
         self.album = album
         super.init(nibName: nil, bundle: nil)
@@ -28,17 +64,95 @@ class AlbumVC: UIViewController {
         super.viewDidLoad()
         title = album.name
         view.backgroundColor = .systemBackground
+        view.addSubview(collectionView)
         
-        APICaller.shared.getAlbumDetails(for: album) { (result) in
+        collectionView.register(
+            AlbumTrackCVC.self,
+            forCellWithReuseIdentifier: AlbumTrackCVC.identifier
+        )
+        collectionView.register(
+            PlaylistHeaderCRV.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: PlaylistHeaderCRV.identifier
+        )
+        collectionView.backgroundColor = .systemBackground
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        
+        APICaller.shared.getAlbumDetails(for: album) { [weak self] (result) in
             DispatchQueue.main.async {
                 switch result {
-                case .success(_):
-                    break
-                case .failure(_):
-                    break
+                case .success(let model):
+                    self?.tracks = model.tracks.items
+                    self?.viewModels = model.tracks.items.compactMap({
+                        AlbumTrackCellVM(
+                            name: $0.name,
+                            artistName: $0.artists.first?.name ?? ""
+                        )
+                    })
+                    self?.collectionView.reloadData()
+                case .failure(let error):
+                    print(error.localizedDescription)
                 }
             }
         }
     }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        collectionView.frame = view.bounds
+    }
+}
 
+ // MARK: - UICollectionViewDelegate and DataSource
+
+extension AlbumVC: UICollectionViewDelegate, UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModels.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: AlbumTrackCVC.identifier,
+                for: indexPath) as? AlbumTrackCVC else {
+            return UICollectionViewCell()
+        }
+        cell.configure(with: viewModels[indexPath.row])
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        guard let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: PlaylistHeaderCRV.identifier,
+                for: indexPath) as? PlaylistHeaderCRV else {
+            return UICollectionReusableView()
+        }
+        let headerViewModel = PlaylistHeaderViewModel(
+            name: album.name,
+            ownerName: album.artists.first?.name,
+            descrirption: "Release Date: \(String.formatterDate(string: album.release_date))",
+            artworkURL: URL(string: album.images.first?.url ?? "")
+        )
+        header.configure(with: headerViewModel)
+        header.delegate = self
+        return header
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        let track = tracks[indexPath.row]
+        PlayBackPresenter.startPlayback(from: self, track: track)
+    }
+}
+
+// MARK: - Header Delegate
+extension AlbumVC: PlaylistHeaderCRVDelegate {
+    func PlaylistHeaderCRVDidTapPlay(_ header: PlaylistHeaderCRV) {
+        PlayBackPresenter.startPlayback(from: self, tracks: tracks)
+    }
 }

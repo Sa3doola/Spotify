@@ -24,7 +24,10 @@ class SearchResultVC: UIViewController {
     
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(SearchResultDefaultTVC.self,
+                           forCellReuseIdentifier: SearchResultDefaultTVC.identifier)
+        tableView.register(SearchResultSubTitleTVC.self,
+                           forCellReuseIdentifier: SearchResultSubTitleTVC.identifier)
         return tableView
     }()
 
@@ -93,18 +96,59 @@ extension SearchResultVC: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let results = sections[indexPath.section].results[indexPath.row]
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         switch results {
-        case .artist(let model):
-            cell.textLabel?.text = model.name
-        case .album(let model):
-            cell.textLabel?.text = model.name
-        case .playlist(let model):
-            cell.textLabel?.text = model.name
-        case .track(let model):
-            cell.textLabel?.text = model.name
+        case .artist(let artist):
+            guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: SearchResultDefaultTVC.identifier,
+                    for: indexPath) as? SearchResultDefaultTVC else {
+                return UITableViewCell()
+            }
+            let viewModel = SearchResultDefaultTVCVM(
+                title: artist.name,
+                imageURL: URL(string: artist.images?.first?.url ?? "")
+            )
+            cell.configure(with: viewModel)
+            return cell
+        case .album(let album):
+            guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: SearchResultSubTitleTVC.identifier,
+                    for: indexPath) as? SearchResultSubTitleTVC else {
+                return UITableViewCell()
+            }
+            let viewModel = SearchResultSubTitleTVCVM(
+                title: album.name,
+                subTitle: album.artists.first?.name ?? "",
+                imageURL: URL(string: album.images.first?.url ?? "")
+            )
+            cell.configure(with: viewModel)
+            return cell
+        case .playlist(let playlist):
+            guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: SearchResultSubTitleTVC.identifier,
+                    for: indexPath) as? SearchResultSubTitleTVC else {
+                return UITableViewCell()
+            }
+            let viewModel = SearchResultSubTitleTVCVM(
+                title: playlist.name,
+                subTitle: playlist.owner.display_name,
+                imageURL: URL(string: playlist.images.first?.url ?? "")
+            )
+            cell.configure(with: viewModel)
+            return cell
+        case .track(let track):
+            guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: SearchResultSubTitleTVC.identifier,
+                    for: indexPath) as? SearchResultSubTitleTVC else {
+                return UITableViewCell()
+            }
+            let viewModel = SearchResultSubTitleTVCVM(
+                title: track.name,
+                subTitle: track.artists.first?.name ?? "" ,
+                imageURL: URL(string: track.album?.images.first?.url ?? "")
+            )
+            cell.configure(with: viewModel)
+            return cell
         }
-        return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -115,5 +159,9 @@ extension SearchResultVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return sections[section].title
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 40
     }
 }

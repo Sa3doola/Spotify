@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SafariServices
 
 class SearchVC: UIViewController, UISearchResultsUpdating, UISearchBarDelegate {
     
@@ -111,7 +112,11 @@ extension SearchVC :SearchResultVCDelegate {
     func didTapResult(_ result: SearchResult) {
         switch result {
         case .artist(let model):
-            break
+            guard let url = URL(string: model.external_urls["spotify"] ?? "") else {
+                return
+            }
+            let vc = SFSafariViewController(url: url)
+            present(vc, animated: true)
         case .album(model: let model):
             let vc = AlbumVC(album: model)
             vc.navigationItem.largeTitleDisplayMode = .never
@@ -121,7 +126,7 @@ extension SearchVC :SearchResultVCDelegate {
             vc.navigationItem.largeTitleDisplayMode = .never
             navigationController?.pushViewController(vc, animated: true)
         case .track(let track):
-            break
+            PlayBackPresenter.startPlayback(from: self, track: track)
         }
     }
 }
